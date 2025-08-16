@@ -1,0 +1,38 @@
+# -------------Development--------------
+
+
+FROM node:22-alpine as dev
+
+# Define Working Directory
+WORKDIR /app
+
+# Copy Package.Json and Package-lock.Json to Container
+COPY backend/package*.json ./
+RUN npm install
+
+# Copy All file to Container
+COPY backend/ .
+
+# Run Application
+CMD [ "npx","nodemon","index.js" ]
+
+
+# -------------Production--------------
+
+
+# Base Image
+FROM node:22-alpine as prod
+
+
+# Define Working Directory
+WORKDIR /app
+
+# Copy Package.Json and Package-lock.Json to Container
+COPY backend/package*.json ./
+RUN npm install
+
+# Copy All file to Container
+COPY backend/ .
+
+# Run Application
+CMD [ "node","index.js" ]

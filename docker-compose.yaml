@@ -1,0 +1,87 @@
+version: "3.9"
+
+services:
+  # ---------- DEV ----------
+  db-dev:
+    image: mongo:latest
+    profiles: ["dev"]
+    volumes:
+      - mern_db_dev:/data/db
+    restart: unless-stopped
+
+  backend-dev:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.backend
+      target: dev
+    profiles: ["dev"]
+    volumes:
+      - ./backend:/app
+      - /app/node_modules            
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://db-dev:27017/crud
+    depends_on:
+      - db-dev
+    restart: unless-stopped
+
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.frontend
+      target: dev
+    profiles: ["dev"]
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:5000
+    depends_on:
+      - backend-dev
+    restart: unless-stopped
+
+  # ---------- PROD ----------
+  db-prod:
+    image: mongo:latest
+    profiles: ["prod"]
+    volumes:
+      - mern_db_prod:/data/db
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.backend
+      target: prod
+    profiles: ["prod"]
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://db-prod:27017/crud
+    ports:
+      - "5001:5000"      # host 5001 → container 5000
+    depends_on:
+      - db-prod
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.frontend
+      target: prod
+      args:
+        VITE_API_URL: http://localhost:5001
+    profiles: ["prod"]
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mern_db_dev:
+  mern_db_prod:

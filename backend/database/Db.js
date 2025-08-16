@@ -1,16 +1,20 @@
+// Robust Mongo connect (works for dev & prod and retries)
 import mongoose from "mongoose";
 
-const connection = async () => {
-  const URL = "mongodb://0.0.0.0:27017/crud";
-  try {
-    await mongoose.connect(URL, {
-      useUnifiedTopology: true,
-      useNewUrlParser: true,
-    });
-    console.log("Connected to Mongo Database Successfully");
-  } catch (error) {
-    console.log("An Error occured while connecting to database", error);
-  }
-};
+mongoose.set("strictQuery", true);
 
-export default connection;
+const uri =
+  process.env.MONGO_URI ||
+  `mongodb://${process.env.DB_HOST || "db"}:27017/${process.env.DB_NAME || "crud"}`;
+
+async function connectWithRetry() {
+  try {
+    await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+    console.log("Mongo connected →", uri);
+  } catch (err) {
+    console.error("Mongo connect failed, retrying in 5s…", err.message);
+    setTimeout(connectWithRetry, 5000);
+  }
+}
+
+export default connectWithRetry;
