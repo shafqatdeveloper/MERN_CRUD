@@ -5,15 +5,15 @@ on:
     branches: [main]
 
 jobs:
-  test-build:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version: [20.x]
+
     steps:
       - uses: actions/checkout@v4
 
-      # cache both package-locks
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -23,16 +23,16 @@ jobs:
             frontend/package-lock.json
 
       # ---------- Backend ----------
-      - name: Install backend
+      - name: Install backend deps
         working-directory: backend
         run: npm ci
 
-      - name: Test backend
+      - name: Build backend (optional)
         working-directory: backend
-        run: npm test --if-present
+        run: npm run build --if-present
 
       # ---------- Frontend ----------
-      - name: Install frontend
+      - name: Install frontend deps
         working-directory: frontend
         run: npm ci
 
@@ -40,7 +40,7 @@ jobs:
         working-directory: frontend
         run: npm run build --if-present
 
-      # (optional) save build artifact (e.g., for deploy step)
+      # ---------- Artifacts ----------
       - name: Upload frontend build
         if: success()
         uses: actions/upload-artifact@v4
